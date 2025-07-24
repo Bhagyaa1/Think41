@@ -1,0 +1,26 @@
+@app.route('/users/<user_id>/snippets', methods=['POST'])
+@jwt_required()
+def save_snippet(user_id):
+    data = request.get_json()
+    name = data['name']
+    language = data['language']
+    content = data['code_content']
+
+    snippet = Snippet.query.filter_by(user_id=user_id, name=name).first()
+
+    if snippet:
+        snippet.language = language  # optional update
+    else:
+        snippet = Snippet(name=name, user_id=user_id, language=language)
+        db.session.add(snippet)
+        db.session.flush()  # get snippet.id
+
+    version = SnippetVersion(snippet_id=snippet.id, code_content=content)
+    db.session.add(version)
+    db.session.commit()
+
+    return jsonify({
+        'name': name,
+        'language': language,
+        'updated_at': snippet.updated_at.isoformat()
+    }), 201
