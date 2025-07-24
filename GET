@@ -1,0 +1,18 @@
+@app.route('/users/<user_id>/snippets/<snippet_name>', methods=['GET'])
+@jwt_required()
+def get_snippet(user_id, snippet_name):
+    version_num = request.args.get('version')
+
+    snippet = Snippet.query.filter_by(user_id=user_id, name=snippet_name).first_or_404()
+
+    if version_num:
+        version = SnippetVersion.query.filter_by(snippet_id=snippet.id, id=int(version_num)).first_or_404()
+    else:
+        version = SnippetVersion.query.filter_by(snippet_id=snippet.id).order_by(SnippetVersion.version_created_at.desc()).first()
+
+    return jsonify({
+        'name': snippet.name,
+        'language': snippet.language,
+        'content': version.code_content,
+        'updated_at': snippet.updated_at.isoformat()
+    })
